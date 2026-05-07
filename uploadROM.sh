@@ -57,11 +57,31 @@ echo "[SCRIPT] - Output: "
 output_file="out/${NTBUILD}_${VERSION}_${DEVICE_MODEL}_OS${BASE_BUILD_ID}_${hash}_${status}.zip"
 echo "$output_file"
 echo "[ONEDRIVE] - Uploading"
-# 1drive
-rclone -v --config="$RCLONE_CONFIG_1DRIVE" copy "$output_file" "$ONEDRIVE_REMOTE:NTBuild/${uploaddir}/${VERSION}/${DEVICE_MODEL}/" || {
-echo "[ONEDRIVE] - Error uploading file to OneDrive: $output_file"
-exit 1
-}
+
+# ─── Upload to Pixeldrain ─────────────────────────────────────────────────────
+upload "Uploading ${final_name}..."
+
+PD_RESPONSE="$(curl -s \
+    -u ":${PD_API_KEY}" \
+    -F "file=@${work_dir}/out/${final_name};filename=${final_name}" \
+    https://pixeldrain.com/api/file)"
+
+PD_ID="$(echo "${PD_RESPONSE}" | grep -o '"id":"[^"]*"' | cut -d'"' -f4 || true)"
+
+if [[ -z "${PD_ID}" ]]; then
+    error "Upload to Pixeldrain failed! Response: ${PD_RESPONSE}"
+    exit 1
+fi
+
+PD_LINK="https://pixeldrain.com/u/${PD_ID}"
+upload "Upload successful: ${PD_LINK}"
+
+# ─── Export output vars cho workflow ─────────────────────────────────────────
+# Workflow sẽ dùng các giá trị này trong thông báo Telegram thành công
+{
+    echo "ROM_NAME=${final_name}"
+    echo "PD_LINK=${PD_LINK}"
+} >> "${GITHUB_OUTPUT}"
 
 echo "[SYSTEM] - Clean Workflow.."
 rm -rf $work_dir/out
