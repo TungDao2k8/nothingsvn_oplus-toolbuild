@@ -65,16 +65,13 @@ jobs:
         run: |
           sudo bash packROM.sh n
 
-      - name: Setup Rclone...
-        run: |
-          sudo -E bash uploadROM.sh setup "${{ secrets.GH_TOKEN }}" "${{ secrets.GH_REPO }}" "${{ secrets.RCLONE_TOKEN_PATH }}"
-          
-      - name: Upload ROM...
+      - name: Upload ROM to Pixeldrain...
+        env:
+          PIXELDRAIN_API_KEY: ${{ secrets.PIXELDRAIN_API_KEY }}
         run: |
           sudo -E bash uploadROM.sh
       
-      - name: Update Database and Notificaton to Telegram
+      - name: Update Database and Notification to Telegram
         env:
           TELEGRAM_TOKEN: ${{ secrets.TG_TOKEN }}
         run: |
-          
